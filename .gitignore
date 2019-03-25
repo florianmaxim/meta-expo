@@ -1,0 +1,10 @@
+.expo
+assets
+node_modules
+_package.json
+__package.json
+.watchmanconfig
+App.js
+app.json
+babel.config.js
+package-lock.json
