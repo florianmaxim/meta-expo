@@ -1,5 +1,11 @@
 # meta-expo
 
+# Install
+
+```javascript
+npm install meta-expo
+```
+
 # Usage
 
 https://snack.expo.io/@florianmaxim/meta-expo
