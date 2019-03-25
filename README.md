@@ -21,7 +21,7 @@ export default class App extends React.Component {
 
 }
 ```
-
+https://snack.expo.io/@florianmaxim/meta-demo-air-piano
 
 ```javascript
 import { AR, Cube } from 'meta-expo';
