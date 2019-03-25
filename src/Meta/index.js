@@ -14,6 +14,8 @@ let planes;
 const touches = [];
 let touched;
 
+let _touch;
+
 const lifes = [];
 
 const touch = {
@@ -105,10 +107,9 @@ const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
     material: new THREE.MeshPhongMaterial({
       side: THREE.DoubleSide,
       wireframe: true,
-      opacity: 0.085,
+      opacity: 0.1,
       transparent: true
     }),
-    
   });
   scene.add(planes);
 
@@ -173,7 +174,7 @@ class Cube extends React.Component {
       color: this.color,
     });
 
-    const roundMesh = new THREE.Mesh( createBoxWithRoundedEdges( this.size.x, this.size.y, this.size.z, this.size.z/4, 4 ), material );
+    const roundMesh = new THREE.Mesh( createBoxWithRoundedEdges( this.size.x, this.size.y, this.size.z, this.size.z/32, 4 ), material );
 
     let mesh;
     if(this.round){
@@ -318,6 +319,7 @@ class Space extends React.Component {
     THREE.suppressExpoWarnings();
   }
 
+
   render() {
     // Create an `ExpoGraphics.View` covering the whole screen, tell it to call our
     // `onContextCreate` function once it's initialized.
@@ -393,6 +395,11 @@ class Meta extends React.Component {
       touches.push(doStuff)
     }
 
+  }
+
+  
+  static getSpaceObject(){
+    return space;
   }
 
   onTouch(doStuff){
