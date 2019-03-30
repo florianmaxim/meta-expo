@@ -2,7 +2,11 @@ import { View as GraphicsView } from 'expo-graphics';
 import { AR } from 'expo';
 import ExpoTHREE, { THREE, AR as ThreeAR } from 'expo-three';
 import React, {Fragment} from 'react';
-import {View, Dimensions, StatusBar} from 'react-native';
+import {View, Dimensions, StatusBar, PanResponder} from 'react-native';
+
+import TouchableView from './TouchableView';
+
+import Cylinder from './Cylinder';
 
 import ARPlanes from '../ARPlanes';
 
@@ -90,11 +94,11 @@ const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
 
   scene.add(new THREE.AmbientLight(0x404040));
 
-  const light = new THREE.DirectionalLight(0xffffff, 0.5);
+  const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(-3, 3, 3);
   scene.add(light);
 
-  const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+  const light2 = new THREE.DirectionalLight(0xffffff, 1);
   light2.position.set(3, 3, -3);
   scene.add(light2);
 
@@ -107,7 +111,7 @@ const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
     material: new THREE.MeshPhongMaterial({
       side: THREE.DoubleSide,
       wireframe: true,
-      opacity: 0.1,
+      opacity: 0,
       transparent: true
     }),
   });
@@ -157,6 +161,8 @@ class Cube extends React.Component {
 
     this.life = props && props.life ? props.life : null;
 
+   
+
     this.onTouch = props && props.onTouch ? props.onTouch : null;
     this.onRelease = props && props.onRelease ? props.onRelease : null;
 
@@ -174,33 +180,30 @@ class Cube extends React.Component {
       color: this.color,
     });
 
-    const roundMesh = new THREE.Mesh( createBoxWithRoundedEdges( this.size.x, this.size.y, this.size.z, this.size.z/32, 4 ), material );
+    const roundMesh = new THREE.Mesh( createBoxWithRoundedEdges( this.size.x, this.size.y, this.size.z, this.size.z/8, 4 ), material );
 
-    let mesh;
+    this.mesh;
     if(this.round){
-      mesh = roundMesh.clone();
+      this.mesh = roundMesh.clone();
     }else{
-      mesh = new THREE.Mesh(geometry, material);
+      this.mesh = new THREE.Mesh(geometry, material);
     }
 
-    mesh.position.copy(this.position);
+    this.mesh.position.copy(this.position);
 
-    mesh.position.y += this.size.y / 2;
+    this.mesh.position.y += this.size.y / 2;
 
-   
 
     if(this.onTouch){
-      mesh.userData.onTouch = this.onTouch
+      this.mesh.userData.onTouch = this.onTouch
     }
     if(this.onRelease){
-      mesh.userData.onRelease = this.onRelease
+      this.mesh.userData.onRelease = this.onRelease
     }
 
-    mesh.name = 'HANNES'
+    space.add(this.mesh)
 
-    space.add(mesh)
-
-    mesh.color = function(color){
+    this.mesh.color = function(color){
       if(color === 'white') color = 0xffffff;
       if(color === 'black') color = 0x000000;
 
@@ -208,17 +211,33 @@ class Cube extends React.Component {
       if(color === 'blue') color = 0x0000ff;
       if(color === 'yellow') color = 0xFFFF00;
       if(color === 'green') color = 0x00FF00;
-      mesh.material.color.setHex( color );
+      this.mesh.material.color.setHex( color );
     }
 
 
-   
+    if(this.life){
+      lifes.push(() => {
+        this.life(this.mesh)
+      })
+    }
     
 
     //console.log(mesh)
     //meshes.push(mesh)
   
   }
+
+  color(color){
+    if(color === 'white') color = 0xffffff;
+    if(color === 'black') color = 0x000000;
+
+    if(color === 'red') color = 0xff0000;
+    if(color === 'blue') color = 0x0000ff;
+    if(color === 'yellow') color = 0xFFFF00;
+    if(color === 'green') color = 0x00FF00;
+    this.mesh.material.color.setHex( color );
+  }
+
 
   render(){
     return null;
@@ -396,7 +415,6 @@ class Meta extends React.Component {
     }
 
   }
-
   
   static getSpaceObject(){
     return space;
@@ -409,7 +427,8 @@ class Meta extends React.Component {
   componentWillMount() {
     THREE.suppressExpoWarnings();
   }
-  
+
+ 
   render() {
     return (
       <Fragment>
@@ -424,7 +443,7 @@ class Meta extends React.Component {
           arTrackingConfiguration={AR.TrackingConfiguration.World}
         />
 
-        <View 
+        <TouchableView 
           style={{
             position: 'absolute', 
             flex: 1,
@@ -432,26 +451,26 @@ class Meta extends React.Component {
             height: Dimensions.get('screen').height
           }}
 
-
-          onStartShouldSetResponder={(data) => {
-            
-            console.log('startStart')
-            touch.x = (  data.nativeEvent.pageX / Dimensions.get('screen').width ) * 2 - 1;
-            touch.y = - (  data.nativeEvent.pageY /Dimensions.get('screen').height ) * 2 + 1;
-            
+          onTouchesStarted={(event) => {
+            touch.x = (  event.touches[0].pageX / Dimensions.get('screen').width ) * 2 - 1;
+            touch.y = - (  event.touches[0].pageY /Dimensions.get('screen').height ) * 2 + 1;
           }}
 
-          onTouchEnd={()=>{
-            
-            if(touched && touched.userData.onRelease)
-            touched.userData.onRelease(touched)
-            touch.x, touch.y = null
-            console.log('touchEnd')
+          onTouchesMoved={(event) => {
+            touch.x = (  event.touches[0].pageX / Dimensions.get('screen').width ) * 2 - 1;
+            touch.y = - (  event.touches[0].pageY /Dimensions.get('screen').height ) * 2 + 1;    
+          }}
 
+          onTouchesEnded={(event) => {
+            touch.x, touch.y = null;
+          }}
+
+          onTouchesCancelled={(event) => {
+            touch.x, touch.y = null;
           }}
         >
           <StatusBar hidden/>
-        </View>
+        </TouchableView>
       </Fragment>
     );
   }
@@ -467,7 +486,7 @@ class Meta extends React.Component {
 
     life(delta);
 
-    intersectSpace();
+    intersectSpace(delta);
     
     renderMeshes()
     animateMeshes(delta)
@@ -481,7 +500,7 @@ class Meta extends React.Component {
 
 function life(delta){
   for(const life of lifes){
-    life(delta)
+    life()
   }
  }
 
@@ -523,7 +542,7 @@ function intersectPlanes(){
 
 }
 
-function intersectSpace(){
+function intersectSpace(delta){
 
   // If we have a position we have a touch.
   if(touch.x && touch.y){
@@ -549,7 +568,7 @@ function intersectSpace(){
     
       if(object.userData && object.userData.onTouch)
       {
-        object.userData.onTouch(object)
+        object.userData.onTouch(object, delta)
         touched = object
       }
      
@@ -576,9 +595,14 @@ function intersectSpace(){
       }
     }
   
+  }else{
+    if(touched){
+      touched.userData.onRelease(touched, delta)
+      tocuhed = null
+    }
   }
 
 }
 
 
-export { Meta, Space, Cube, Sphere, Cone }
+export { Meta, Space, Cube, Sphere, Cone, Cylinder, space }
