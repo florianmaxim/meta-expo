@@ -1,4 +1,4 @@
-import { Space, Meta, Cube, Cone, Sphere, Cylinder } from './Meta';
+import { Space, Meta, Cube, Cone, Sphere, Cylinder, Ball } from './Meta';
 
 export { 
   Space, 
@@ -8,5 +8,6 @@ export {
   Cube,
   Cone,
   Sphere,
-  Cylinder 
+  Cylinder, 
+  Ball 
 };

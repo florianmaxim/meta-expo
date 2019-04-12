@@ -1,6 +1,6 @@
 import { AR } from 'expo';
 
-import { THREE, AR as ThreeAR } from 'expo-three';
+import ExpoTHREE, { THREE, AR as ThreeAR } from 'expo-three';
 
 const ARFrameAttribute = AR.FrameAttribute || AR.FrameAttributes;
 

@@ -9,11 +9,13 @@ import TouchableView from './TouchableView';
 import Cylinder from './Cylinder';
 
 import ARPlanes from '../ARPlanes';
+import ARPoints from '../ARPoints';
 
 let renderer, scene, camera;
 let raycaster, mouse;
 
 let planes;
+let points;
 
 const touches = [];
 let touched;
@@ -78,9 +80,13 @@ const onContextCreateVR = ({ gl, canvas, width, height, scale: pixelRatio }) => 
 
 };
 
-const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
+const onContextCreateAR = ({ gl, scale: pixelRatio, width, height, arSession }) => {
 
   AR.setPlaneDetection('horizontal')
+
+  if(arSession){
+    this.arSession = arSession
+  }
 
   renderer = new ExpoTHREE.Renderer({ gl, pixelRatio, width, height });
   renderer.shadowMap.enabled = true;
@@ -92,7 +98,7 @@ const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
   camera = new ThreeAR.Camera(width, height, 0.01, 1000);
   scene.add(camera)
 
-  scene.add(new THREE.AmbientLight(0x404040));
+  scene.add(new THREE.AmbientLight(0xFFFFFF));
 
   const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(-3, 3, 3);
@@ -111,11 +117,14 @@ const onContextCreateAR = ({ gl, scale: pixelRatio, width, height }) => {
     material: new THREE.MeshPhongMaterial({
       side: THREE.DoubleSide,
       wireframe: true,
-      opacity: 0,
+      opacity: 1,
       transparent: true
     }),
   });
   scene.add(planes);
+
+  points = new ARPoints();
+  scene.add(points);
 
   /* const shadowFloor = new ExpoTHREE.AR.ShadowFloor({ width: 1, height: 1, opacity: 0.6 }); // The opacity of the shadow
 
@@ -178,6 +187,7 @@ class Cube extends React.Component {
 
     const material = new THREE.MeshPhongMaterial({
       color: this.color,
+      side: THREE.DoubleSide
     });
 
     const roundMesh = new THREE.Mesh( createBoxWithRoundedEdges( this.size.x, this.size.y, this.size.z, this.size.z/8, 4 ), material );
@@ -245,6 +255,143 @@ class Cube extends React.Component {
 
 }
 
+class Ball extends React.Component {
+
+  constructor(props){
+
+    super(props)
+
+    this.size = props && props.size !== undefined ? props.size : {x:0.25,y:0.25,z:0.25};
+
+    this.position = props && props.position !== undefined ? props.position : {x:0,y:0,z:1};
+
+    this.color = props && props.color ? props.color : 0xffffff * Math.random();
+
+    this.round = props && props.round ? props.round : false;
+
+    this.life = props && props.life ? props.life : null;
+
+   
+
+    this.onTouch = props && props.onTouch ? props.onTouch : null;
+    this.onRelease = props && props.onRelease ? props.onRelease : null;
+
+
+    const geometry = new THREE.SphereGeometry(
+    radius=this.size.x/2,
+    widthSegments=32,
+    heightSegments=32,
+    phiStart=0,
+    phiLength=Math.PI/4,
+    thetaStart=0,
+    thetaLength=6.3);
+
+    const geometry2 = new THREE.SphereGeometry(
+      radius=this.size.x/2,
+    widthSegments=32,
+    heightSegments=32,
+    phiLength=Math.PI/4,
+    phiLength=Math.PI/4,
+    thetaStart=0,
+    thetaLength=6.3);
+
+    const geometry3 = new THREE.SphereGeometry(
+      radius=this.size.x/2,
+    widthSegments=32,
+    heightSegments=32,
+    phiStart=(Math.PI/4)*2,
+    phiLength=Math.PI/4,
+    thetaStart=0,
+    thetaLength=6.3);
+
+    const geometry4 = new THREE.SphereGeometry(
+      radius=this.size.x/2,
+    widthSegments=32,
+    heightSegments=32,
+    phiStart=(Math.PI/4)*3,
+    phiLength=Math.PI/4,
+    thetaStart=0,
+    thetaLength=6.3);
+
+    //const COLORS = [0xe2b500, 0xc41313, 0x131377, 0x25680b]
+    //const COLORS = [0x0e8e8e8, 0xce2323, 0x0e8e8e8, 0xce2323]
+    const COLORS = [0x0e8e8e8, 0xedcf10, 0x0e8e8e8, 0xedcf10]
+
+
+    //blue
+    material = new THREE.MeshPhongMaterial( {wireframe: false,  color: COLORS[0], side: THREE.DoubleSide });
+    //green
+    material2 = new THREE.MeshPhongMaterial( {wireframe: false,  color: COLORS[1], side: THREE.DoubleSide });
+    //blue
+    material3 = new THREE.MeshPhongMaterial( {wireframe: false,  color: COLORS[2], side: THREE.DoubleSide });
+    //
+    material4 = new THREE.MeshPhongMaterial( {wireframe: false,  color: COLORS[3], side: THREE.DoubleSide });
+    
+    this.mesh = new THREE.Mesh( geometry, material );
+    var mesh2 = new THREE.Mesh( geometry2, material2 );
+    var mesh3 = new THREE.Mesh( geometry3, material3 );
+    var mesh4 = new THREE.Mesh( geometry4, material4 );
+
+    
+
+    this.mesh.add( mesh2 );
+    this.mesh.add( mesh3 );
+    this.mesh.add( mesh4 );
+
+    space.add( this.mesh );
+
+    if(this.onTouch){
+      this.mesh.userData.onTouch = this.onTouch
+    }
+    if(this.onRelease){
+      this.mesh.userData.onRelease = this.onRelease
+    }
+
+    this.mesh.position.copy(this.position)
+
+    this.mesh.position.x += this.size.x/2
+    this.mesh.position.z -= this.size.x/2
+    
+    space.add(this.mesh)
+
+    this.mesh.color = function(color){
+      if(color === 'white') color = 0xffffff;
+      if(color === 'black') color = 0x000000;
+
+      if(color === 'red') color = 0xff0000;
+      if(color === 'blue') color = 0x0000ff;
+      if(color === 'yellow') color = 0xFFFF00;
+      if(color === 'green') color = 0x00FF00;
+      this.mesh.material.color.setHex( color );
+    }
+
+
+    if(this.life){
+      lifes.push(() => {
+        this.life(this.mesh)
+      })
+    }
+  
+  }
+
+  color(color){
+    if(color === 'white') color = 0xffffff;
+    if(color === 'black') color = 0x000000;
+
+    if(color === 'red') color = 0xff0000;
+    if(color === 'blue') color = 0x0000ff;
+    if(color === 'yellow') color = 0xFFFF00;
+    if(color === 'green') color = 0x00FF00;
+    this.mesh.material.color.setHex( color );
+  }
+
+
+  render(){
+    return null;
+  }
+
+}
+
 class Sphere extends React.Component {
 
   constructor(props){
@@ -261,6 +408,9 @@ class Sphere extends React.Component {
     if(this.color === 'yellow') this.color = 0xFFFF00;
     if(this.color === 'green') this.color = 0x00FF00;
 
+    this.onTouch = props && props.onTouch ? props.onTouch : null;
+    this.onRelease = props && props.onRelease ? props.onRelease : null;
+
     const geometry = new THREE.SphereGeometry(this.size.x/2,32,32);
 
     const material = new THREE.MeshPhongMaterial({
@@ -272,6 +422,15 @@ class Sphere extends React.Component {
     this.mesh.position.copy(this.position);
 
     this.mesh.position.y += this.size.y / 2;
+
+    
+
+    if(this.onTouch){
+      this.mesh.userData.onTouch = this.onTouch
+    }
+    if(this.onRelease){
+      this.mesh.userData.onRelease = this.onRelease
+    }
 
     space.add(this.mesh)
   
@@ -484,14 +643,18 @@ class Meta extends React.Component {
 
   onRender = delta => {
 
-    life(delta);
+   /*  
 
-    intersectSpace(delta);
     
     renderMeshes()
-    animateMeshes(delta)
+    animateMeshes(delta) */
 
-    planes.update();
+    //planes.update();
+    points.update();
+
+    intersectSpace(delta);
+
+    life(delta);
 
     renderer.render(scene, camera);
 
@@ -550,7 +713,7 @@ function intersectSpace(delta){
     raycaster.setFromCamera( touch, camera );
 
     const intersects = raycaster.intersectObjects( space.children, true );
-    const intersectsPlanes = raycaster.intersectObjects( planes.children, true );
+    const intersectsPlanes = raycaster.intersectObjects( points.children, true );
 
     if(intersects.length > 0){
 
@@ -605,4 +768,4 @@ function intersectSpace(delta){
 }
 
 
-export { Meta, Space, Cube, Sphere, Cone, Cylinder, space }
+export { Meta, Space, Cube, Sphere, Cone, Cylinder, Ball, space }
